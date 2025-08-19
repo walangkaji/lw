@@ -228,88 +228,135 @@
         </script>
 
         <script>
-            const eventTimes = ['9:00:00', '12:00:00', '17:00:00', '21:00:00', '1:00:00', '5:00:00'];
-
             const eventsData = {
-                'Day 1': ['Tech Reasearch', 'Drone Boost', 'Hero Advancement', 'City Building', 'Unit Progression', 'Tech Reasearch'],
-                'Day 2': ['Drone Boost', 'Hero Advancement', 'City Building', 'Unit Progression', 'Tech Reasearch', 'Drone Boost'],
-                'Day 3': ['Hero Advancement', 'City Building', 'Unit Progression', 'Tech Reasearch', 'Drone Boost', 'Hero Advancement'],
-                'Day 4': ['City Building', 'Unit Progression', 'Tech Reasearch', 'Drone Boost', 'Hero Advancement', 'City Building'],
-                'Day 5': ['Hero Advancement', 'City Building', 'Unit Progression', 'Tech Reasearch', 'Drone Boost', 'Hero Advancement'],
-                'Day 6': ['City Building', 'Unit Progression', 'Tech Reasearch', 'Drone Boost', 'Hero Advancement', 'City Building'],
-                'Day 7': ['Unit Progression', 'Tech Reasearch', 'Drone Boost', 'Hero Advancement', 'City Building', 'Unit Progression'],
+                'Day 1': [
+                    { time: '9:00:00', name: 'Tech Reasearch' },
+                    { time: '13:00:00', name: 'Drone Boost' },
+                    { time: '17:00:00', name: 'Hero Advancement' },
+                    { time: '21:00:00', name: 'City Building' },
+                    { time: '1:00:00', name: 'Unit Progression' },
+                    { time: '5:00:00', name: 'Tech Reasearch' },
+                ],
+                'Day 2': [
+                    { time: '9:00:00', name: 'Drone Boost' },
+                    { time: '13:00:00', name: 'Hero Advancement' },
+                    { time: '17:00:00', name: 'City Building' },
+                    { time: '21:00:00', name: 'Unit Progression' },
+                    { time: '1:00:00', name: 'Tech Reasearch' },
+                    { time: '5:00:00', name: 'Drone Boost' },
+                ],
+                'Day 3': [
+                    { time: '9:00:00', name: 'Hero Advancement' },
+                    { time: '13:00:00', name: 'City Building' },
+                    { time: '17:00:00', name: 'Unit Progression' },
+                    { time: '21:00:00', name: 'Tech Reasearch' },
+                    { time: '1:00:00', name: 'Drone Boost' },
+                    { time: '5:00:00', name: 'Hero Advancement' },
+                ],
+                'Day 4': [
+                    { time: '9:00:00', name: 'City Building' },
+                    { time: '13:00:00', name: 'Unit Progression' },
+                    { time: '17:00:00', name: 'Tech Reasearch' },
+                    { time: '21:00:00', name: 'Drone Boost' },
+                    { time: '1:00:00', name: 'Hero Advancement' },
+                    { time: '5:00:00', name: 'City Building' },
+                ],
+                'Day 5': [
+                    { time: '9:00:00', name: 'Hero Advancement' },
+                    { time: '13:00:00', name: 'City Building' },
+                    { time: '17:00:00', name: 'Unit Progression' },
+                    { time: '21:00:00', name: 'Tech Reasearch' },
+                    { time: '1:00:00', name: 'Drone Boost' },
+                    { time: '5:00:00', name: 'Hero Advancement' },
+                ],
+                'Day 6': [
+                    { time: '9:00:00', name: 'City Building' },
+                    { time: '13:00:00', name: 'Unit Progression' },
+                    { time: '17:00:00', name: 'Tech Reasearch' },
+                    { time: '21:00:00', name: 'Drone Boost' },
+                    { time: '1:00:00', name: 'Hero Advancement' },
+                    { time: '5:00:00', name: 'City Building' },
+                ],
+                'Day 7': [
+                    { time: '9:00:00', name: 'Unit Progression' },
+                    { time: '13:00:00', name: 'Tech Reasearch' },
+                    { time: '17:00:00', name: 'Drone Boost' },
+                    { time: '21:00:00', name: 'Hero Advancement' },
+                    { time: '1:00:00', name: 'City Building' },
+                    { time: '5:00:00', name: 'Unit Progression' },
+                ],
             };
 
-            const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-            function getDayKey(date) {
-                let day = date.getDay(); // 0 Minggu → Day 7, 1 Senin → Day 1
-                if (day === 0) return 'Day 7';
-                return 'Day ' + day;
+            function getNow() {
+                return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
             }
 
             function formatCountdown(ms) {
                 if (ms < 0) ms = 0;
-                const totalSec = Math.floor(ms / 1000);
-                const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
-                const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
-                const s = String(totalSec % 60).padStart(2, '0');
-                return `${h}:${m}:${s}`;
+                let sec = Math.floor(ms / 1000);
+                const h = Math.floor(sec / 3600);
+                sec %= 3600;
+                const m = Math.floor(sec / 60);
+                sec %= 60;
+                return `${h}h ${m}m ${sec}s`;
+            }
+
+            function eventAbsoluteDate(day, time) {
+                let date = getNow();
+                const dayIndex = parseInt(day.split(' ')[1]) - 1;
+                const startOfWeek = new Date(date);
+                startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() - 1));
+                const target = new Date(startOfWeek);
+                target.setDate(startOfWeek.getDate() + dayIndex);
+                const [h, m, s] = time.split(':').map(Number);
+                target.setHours(h, m, s, 0);
+                if (h < 6) target.setDate(target.getDate() + 1);
+                return target;
             }
 
             function renderTable() {
-                const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-                const todayKey = getDayKey(now);
-                const tomorrow = new Date(now);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                const tomorrowKey = getDayKey(tomorrow);
-
                 const tbody = document.querySelector('#eventTable tbody');
                 tbody.innerHTML = '';
+                const now = getNow();
 
-                const allEvents = [
-                    { dayKey: todayKey, date: now },
-                    { dayKey: tomorrowKey, date: tomorrow },
-                ];
-
-                let nextEventFound = false;
-
-                allEvents.forEach(({ dayKey, date }) => {
-                    const events = eventsData[dayKey];
-                    events.forEach((eventName, idx) => {
-                        const [hour, minute, second] = eventTimes[idx].split(':').map(Number);
-                        let eventDate = new Date(date);
-                        eventDate.setHours(hour, minute, second, 0);
-
-                        // Event dini hari
-                        if (hour < 9) eventDate.setDate(eventDate.getDate() + 1);
-
-                        let nextEventDate;
-                        if (idx < events.length - 1) {
-                            const [nh, nm, ns] = eventTimes[idx + 1].split(':').map(Number);
-                            nextEventDate = new Date(date);
-                            nextEventDate.setHours(nh, nm, ns, 0);
-                            if (nh < 9) nextEventDate.setDate(nextEventDate.getDate() + 1);
-                        } else {
-                            nextEventDate = new Date(date);
-                            nextEventDate.setDate(nextEventDate.getDate() + 1);
-                            nextEventDate.setHours(9, 0, 0, 0);
-                        }
-
-                        let rowClass = '';
-                        if (now >= eventDate && now < nextEventDate) {
-                            rowClass = 'text-success fw-bold';
-                        }
-                        // else if (!nextEventFound && now < eventDate) {
-                        //     rowClass = 'text-warning';
-                        //     nextEventFound = true;
-                        // }
-                        else if (now > nextEventDate) {
-                            rowClass = 'text-secondary';
-                        }
-
-                        tbody.innerHTML += `<tr><td class="${rowClass}">${daysMap[eventDate.getDay()]}</td><td class="${rowClass}">${eventTimes[idx]}</td><td class="${rowClass}">${eventName}</td><td class="${rowClass}">${formatCountdown(eventDate - now)}</td></tr>`;
+                const flatEvents = [];
+                for (const [day, arr] of Object.entries(eventsData)) {
+                    arr.forEach((ev) => {
+                        flatEvents.push({ day, ...ev, date: eventAbsoluteDate(day, ev.time) });
                     });
+                }
+                flatEvents.sort((a, b) => a.date - b.date);
+
+                let currentIndex = flatEvents.findIndex((e, i) => {
+                    const next = flatEvents[i + 1];
+                    return now >= e.date && (!next || now < next.date);
+                });
+                if (currentIndex === -1) {
+                    currentIndex = flatEvents.findIndex((e) => e.date > now) - 1;
+                    if (currentIndex < 0) currentIndex = 0;
+                }
+
+                const currentDay = flatEvents[currentIndex].day;
+                const nextDay = 'Day ' + (parseInt(currentDay.split(' ')[1]) + 1);
+                const showEvents = flatEvents.filter((e) => e.day === currentDay || e.day === nextDay);
+
+                showEvents.forEach((ev, i) => {
+                    let rowClass = '';
+                    let status;
+                    if (flatEvents[currentIndex] === ev) {
+                        status = 'Ongoing';
+                        rowClass = 'text-success fw-bold';
+                    } else if (flatEvents[currentIndex + 1] === ev) {
+                        status = formatCountdown(ev.date - now);
+                        rowClass = 'text-warning';
+                    } else if (ev.date < now) {
+                        status = 'passed';
+                        rowClass = 'text-secondary';
+                    } else {
+                        status = formatCountdown(ev.date - now);
+                    }
+
+                    tbody.innerHTML += `<tr><td class="${rowClass}">${ev.day}</td><td class="${rowClass}">${ev.time}</td><td class="${rowClass}">${ev.name}</td><td class="${rowClass}">${status}</td></tr>`;
                 });
             }
 
