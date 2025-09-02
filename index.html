@@ -75,7 +75,7 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <div class="h-100 p-5 rounded-3 border rounded-3">
+                        <div class="h-100 p-2 p-md-5 border rounded-3">
                             <table class="table table-sm table-hover" id="eventTable">
                                 <thead>
                                     <tr>
@@ -228,6 +228,9 @@
         </script>
 
         <script>
+            let flatEvents = [];
+            let weekStartThis, weekStartPrev;
+
             const eventsData = {
                 'Day 1': [
                     { time: '9:00:00', name: 'Tech Reasearch' },
@@ -292,40 +295,44 @@
             }
 
             function formatCountdown(ms) {
-                if (ms < 0) ms = 0;
-                let sec = Math.floor(ms / 1000);
-                const h = Math.floor(sec / 3600);
-                sec %= 3600;
-                const m = Math.floor(sec / 60);
-                sec %= 60;
-                return `${h}h ${m}m ${sec}s`;
+                const sec = Math.max(0, Math.floor(ms / 1000));
+                return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
             }
 
-            function eventAbsoluteDate(day, time) {
-                let date = getNow();
+            function eventAbsoluteDate(day, time, weekStart) {
                 const dayIndex = parseInt(day.split(' ')[1]) - 1;
-                const startOfWeek = new Date(date);
-                startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() - 1));
-                const target = new Date(startOfWeek);
-                target.setDate(startOfWeek.getDate() + dayIndex);
+                const target = new Date(weekStart);
+                target.setDate(target.getDate() + dayIndex);
                 const [h, m, s] = time.split(':').map(Number);
                 target.setHours(h, m, s, 0);
                 if (h < 6) target.setDate(target.getDate() + 1);
                 return target;
             }
 
+            function initEvents() {
+                const now = getNow();
+                const getWeekStart = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() || 7) - 1)); // Senin = 1
+                weekStartThis = getWeekStart(now);
+                weekStartPrev = new Date(weekStartThis);
+                weekStartPrev.setDate(weekStartThis.getDate() - 7);
+
+                const cutoffHour = 9;
+                const earlyMonday = now.getDay() === 1 && now.getHours() < cutoffHour;
+
+                flatEvents = [];
+                for (const [day, arr] of Object.entries(eventsData)) {
+                    arr.forEach((ev) => {
+                        const ws = earlyMonday && day === 'Day 7' ? weekStartPrev : weekStartThis;
+                        flatEvents.push({ day, ...ev, date: eventAbsoluteDate(day, ev.time, ws) });
+                    });
+                }
+                flatEvents.sort((a, b) => a.date - b.date);
+            }
+
             function renderTable() {
                 const tbody = document.querySelector('#eventTable tbody');
                 tbody.innerHTML = '';
                 const now = getNow();
-
-                const flatEvents = [];
-                for (const [day, arr] of Object.entries(eventsData)) {
-                    arr.forEach((ev) => {
-                        flatEvents.push({ day, ...ev, date: eventAbsoluteDate(day, ev.time) });
-                    });
-                }
-                flatEvents.sort((a, b) => a.date - b.date);
 
                 let currentIndex = flatEvents.findIndex((e, i) => {
                     const next = flatEvents[i + 1];
@@ -337,21 +344,21 @@
                 }
 
                 const currentDay = flatEvents[currentIndex].day;
-                const nextDay = 'Day ' + (parseInt(currentDay.split(' ')[1]) + 1);
+                let nextNum = parseInt(currentDay.split(' ')[1]) + 1;
+                if (nextNum > 7) nextNum = 1;
+                const nextDay = 'Day ' + nextNum;
+
                 const showEvents = flatEvents.filter((e) => e.day === currentDay || e.day === nextDay);
 
-                showEvents.forEach((ev, i) => {
-                    let rowClass = '';
-                    let status;
+                showEvents.forEach((ev) => {
+                    let status, rowClass = '';
+
                     if (flatEvents[currentIndex] === ev) {
-                        status = 'Ongoing';
-                        rowClass = 'text-success fw-bold';
+                        [status, rowClass] = ['Ongoing', 'text-success fw-bold'];
                     } else if (flatEvents[currentIndex + 1] === ev) {
-                        status = formatCountdown(ev.date - now);
-                        rowClass = 'text-warning';
+                        [status, rowClass] = [formatCountdown(ev.date - now), 'text-warning'];
                     } else if (ev.date < now) {
-                        status = 'passed';
-                        rowClass = 'text-secondary';
+                        [status, rowClass] = ['passed', 'text-secondary'];
                     } else {
                         status = formatCountdown(ev.date - now);
                     }
@@ -359,6 +366,8 @@
                     tbody.innerHTML += `<tr><td class="${rowClass}">${ev.day}</td><td class="${rowClass}">${ev.time}</td><td class="${rowClass}">${ev.name}</td><td class="${rowClass}">${status}</td></tr>`;
                 });
             }
+
+            initEvents();
 
             setInterval(renderTable, 1000);
             renderTable();
